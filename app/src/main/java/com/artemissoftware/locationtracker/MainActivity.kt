@@ -39,6 +39,18 @@ class MainActivity : AppCompatActivity() {
         */
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * Provides a simple way of getting a device's location and is well suited for
      * applications that do not require a fine-grained location and that do not need location
