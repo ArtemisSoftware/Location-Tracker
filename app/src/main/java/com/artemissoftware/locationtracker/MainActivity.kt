@@ -66,6 +66,36 @@ class MainActivity : AppCompatActivity(), PermissionListener {
 
 
 
+    /**
+     * Provides a simple way of getting a device's location and is well suited for
+     * applications that do not require a fine-grained location and that do not need location
+     * updates. Gets the best and most recent location currently available, which may be null
+     * in rare cases when a location is not available.
+     *
+     * Note: this method should be called after location permission has been granted.
+     */
+    /*
+    //@SuppressLint("MissingPermission")
+    private fun getLastLocation() {
+        fusedLocationClient.lastLocation
+            .addOnCompleteListener { taskLocation ->
+                if (taskLocation.isSuccessful && taskLocation.result != null) {
+
+                    val location = taskLocation.result
+
+                    latitudeText.text = resources
+                        .getString(R.string.latitude_label, location?.latitude)
+                    longitudeText.text = resources
+                        .getString(R.string.longitude_label, location?.longitude)
+                } else {
+                    Log.w(TAG, "getLastLocation:exception", taskLocation.exception)
+                    showSnackbar(R.string.no_location_detected)
+                }
+            }
+    }
+    */
+
+
 
 
     override fun onStart() {
@@ -132,33 +162,7 @@ class MainActivity : AppCompatActivity(), PermissionListener {
 
 
 
-    /**
-     * Provides a simple way of getting a device's location and is well suited for
-     * applications that do not require a fine-grained location and that do not need location
-     * updates. Gets the best and most recent location currently available, which may be null
-     * in rare cases when a location is not available.
-     *
-     * Note: this method should be called after location permission has been granted.
-     *//*
-    @SuppressLint("MissingPermission")
-    private fun getLastLocation() {
-        fusedLocationClient.lastLocation
-            .addOnCompleteListener { taskLocation ->
-                if (taskLocation.isSuccessful && taskLocation.result != null) {
 
-                    val location = taskLocation.result
-
-                    latitudeText.text = resources
-                        .getString(R.string.latitude_label, location?.latitude)
-                    longitudeText.text = resources
-                        .getString(R.string.longitude_label, location?.longitude)
-                } else {
-                    Log.w(TAG, "getLastLocation:exception", taskLocation.exception)
-                    showSnackbar(R.string.no_location_detected)
-                }
-            }
-    }
-*/
     /**
      * Shows a [Snackbar].
      *
