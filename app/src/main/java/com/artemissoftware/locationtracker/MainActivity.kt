@@ -21,10 +21,15 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.view.View
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.artemissoftware.locationtracker.adapters.PinAdapter
+import com.artemissoftware.locationtracker.models.Pin
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
 
 class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener {
@@ -39,6 +44,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     private lateinit var txt_latitude: TextView
     private lateinit var txt_longitude: TextView
 
+    private lateinit var pinAdapter: PinAdapter;
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +55,13 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         txt_longitude = findViewById(R.id.txt_longitude)
 
         (findViewById(R.id.fab) as FloatingActionButton).setOnClickListener(this);
+
+        pinAdapter = PinAdapter();
+
+        rcl_locations.apply {
+            layoutManager = LinearLayoutManager(applicationContext)
+            adapter = pinAdapter
+        }
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -91,6 +105,10 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
                         txt_latitude.text = location?.latitude.toString()
                         txt_longitude.text = location?.longitude.toString()
+
+
+                        val pin = Pin(location?.latitude.toString(), location?.longitude.toString(), Date())
+                        pinAdapter.addPin(pin);
 
                     }
                     else {

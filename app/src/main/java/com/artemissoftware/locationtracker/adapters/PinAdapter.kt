@@ -31,13 +31,12 @@ class PinAdapter() : RecyclerView.Adapter<PinViewHolder>() {
 
     fun addPin(pin : Pin){
 
-       if(list.size + 1 > 10){
+        if(list.size + 1 > 10){
            list.dropLast(1)
-       }
+        }
 
-       list.add(0, pin);
-
-
+        list.add(0, pin);
+        notifyDataSetChanged();
     }
 
 }
