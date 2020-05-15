@@ -18,14 +18,14 @@ import androidx.appcompat.app.AlertDialog
 import android.net.Uri.fromParts
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.content.Intent
+import android.location.Location
 import android.net.Uri
 import android.provider.Settings
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artemissoftware.locationtracker.adapters.PinAdapter
 import com.artemissoftware.locationtracker.models.Pin
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
@@ -41,8 +41,28 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
      */
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
-    private lateinit var txt_latitude: TextView
-    private lateinit var txt_longitude: TextView
+
+    private lateinit var mSettingsClient: SettingsClient;
+    private lateinit var mLocationRequest: LocationRequest;
+    private lateinit var mLocationSettingsRequest: LocationSettingsRequest;
+    private lateinit var mLocationCallback: LocationCallback ;
+    private lateinit var mCurrentLocation: Location ;
+
+
+    // location updates interval - 10sec
+    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 10000
+
+    // fastest updates interval - 5 sec
+    // location updates will be received if another app is requesting the locations
+    // than your app can handle
+    private val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS: Long = 5000
+
+    private val REQUEST_CHECK_SETTINGS = 100
+
+
+    // boolean flag to toggle the ui
+    private var  mRequestingLocationUpdates: Boolean = false
+
 
     private lateinit var pinAdapter: PinAdapter;
 
@@ -51,10 +71,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        txt_latitude = findViewById(R.id.txt_latitude)
-        txt_longitude = findViewById(R.id.txt_longitude)
-
-        (findViewById(R.id.fab) as FloatingActionButton).setOnClickListener(this);
+        fab.setOnClickListener(this);
 
         pinAdapter = PinAdapter();
 
@@ -63,9 +80,45 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
             adapter = pinAdapter
         }
 
+        init()
+    }
+
+
+    private fun init(){
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+
+        mSettingsClient = LocationServices.getSettingsClient(this);
+
+
+        mLocationCallback = object : LocationCallback() {
+
+            override fun onLocationResult(locationResult: LocationResult?) {
+                super.onLocationResult(locationResult)
+
+                // location is received
+                mCurrentLocation = locationResult?.getLastLocation()!!;
+
+                //--updateLocationUI();
+            }
+        }
+
+
+        mRequestingLocationUpdates = false;
+
+        mLocationRequest = LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        val builder = LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        mLocationSettingsRequest = builder.build();
+
     }
+
+
+
 
     /**
      * Return the current state of the permissions needed.
@@ -79,6 +132,17 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
             .withListener(this)
             .check()
     }
+
+
+
+
+
+
+
+
+
+
+
 
 
     /**
