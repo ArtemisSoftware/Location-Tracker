@@ -18,21 +18,30 @@ import androidx.appcompat.app.AlertDialog
 import android.net.Uri.fromParts
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.content.Intent
+import android.content.IntentSender
 import android.location.Location
 import android.net.Uri
+import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artemissoftware.locationtracker.adapters.PinAdapter
 import com.artemissoftware.locationtracker.models.Pin
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.Exception
 import java.util.*
 
 
-class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener {
+class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener,
+    OnSuccessListener<LocationSettingsResponse>, OnFailureListener {
 
 
 
@@ -81,6 +90,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         }
 
         init()
+        startLocationUpdates()
     }
 
 
@@ -99,7 +109,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
                 // location is received
                 mCurrentLocation = locationResult?.getLastLocation()!!;
 
-                //--updateLocationUI();
+                updateLocationUI();
             }
         }
 
@@ -118,6 +128,25 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     }
 
 
+
+    /**
+     * Update the UI displaying the location data
+     * and toggling the buttons
+     */
+    private fun updateLocationUI() {
+
+
+        txt_latitude.text = mCurrentLocation?.latitude.toString()
+        txt_longitude.text = mCurrentLocation?.longitude.toString()
+
+
+        val pin = Pin(mCurrentLocation?.latitude.toString(), mCurrentLocation?.longitude.toString(), Date())
+        pinAdapter.addPin(pin);
+
+
+
+        //--toggleButtons();
+    }
 
 
     /**
@@ -165,14 +194,9 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
                     if (taskLocation.isSuccessful && taskLocation.result != null) {
 
-                        val location = taskLocation.result
+                        mCurrentLocation = taskLocation.result!!
 
-                        txt_latitude.text = location?.latitude.toString()
-                        txt_longitude.text = location?.longitude.toString()
-
-
-                        val pin = Pin(location?.latitude.toString(), location?.longitude.toString(), Date())
-                        pinAdapter.addPin(pin);
+                        updateLocationUI()
 
                     }
                     else {
@@ -182,6 +206,65 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
                 }
         }
     }
+
+
+
+    override fun onSuccess(LocationSettingsResponse: LocationSettingsResponse?) {
+
+        showSnackbar(R.string.start_location_updates)
+
+        fusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+
+        updateLocationUI();
+    }
+
+
+    override fun onFailure(e: Exception) {
+
+        val statusCode = (e as ApiException).getStatusCode()
+
+        when (statusCode) {
+            LocationSettingsStatusCodes.RESOLUTION_REQUIRED -> {
+
+                try {
+                    val rae =  e as ResolvableApiException;
+                    rae.startResolutionForResult(this, REQUEST_CHECK_SETTINGS);
+                }
+                catch (sie : IntentSender.SendIntentException) {
+                    //Log.i(TAG, "PendingIntent unable to execute request.");
+                }
+
+            }
+
+            LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE -> {
+
+                val errorMessage = "Location settings are inadequate, and cannot be fixed here. Fix in Settings.";
+                //Log.e(TAG, errorMessage);
+
+                //Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+            }
+        }
+
+        updateLocationUI();
+    }
+
+    /**
+     * Starting location updates
+     * Check whether location settings are satisfied and then
+     * location updates will be requested
+     */
+    private fun startLocationUpdates() {
+
+        mSettingsClient.checkLocationSettings(mLocationSettingsRequest)
+            .addOnSuccessListener(this)
+            .addOnFailureListener(this)
+
+    }
+
+
+
+
+
 
 
     /**

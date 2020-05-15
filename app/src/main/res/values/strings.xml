@@ -15,6 +15,9 @@
         No location detected. Make sure location is enabled on the device.
     </string>
 
+    <string name="start_location_updates">Started location updates!</string>
+
+
     <string name="permission_rationale">Location permission is needed for core functionality. You can grant them in app settings.</string>
     <string name="permission_denied_explanation">Permission was denied, but is needed for core functionality.</string>
     <string name="settings">Settings</string>
