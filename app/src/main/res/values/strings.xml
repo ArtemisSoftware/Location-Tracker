@@ -2,6 +2,13 @@
     <string name="app_name">Location Tracker</string>
 
 
+    <string name="latitude_">Latitude:</string>
+    <string name="longitute_">Longitute:</string>
+
+
+    <string name="current_location">Current location</string>
+    <string name="previews_locations">Previews locations</string>
+
     <string name="location_unknown">Unknown</string>
 
     <string name="no_location_detected">

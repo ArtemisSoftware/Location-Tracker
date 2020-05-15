@@ -23,10 +23,12 @@ import android.provider.Settings
 import android.view.View
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 
 
-class MainActivity : AppCompatActivity(), PermissionListener {
+class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener {
+
 
 
     /**
@@ -45,7 +47,10 @@ class MainActivity : AppCompatActivity(), PermissionListener {
         txt_latitude = findViewById(R.id.txt_latitude)
         txt_longitude = findViewById(R.id.txt_longitude)
 
+        (findViewById(R.id.fab) as FloatingActionButton).setOnClickListener(this);
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
     }
 
     /**
@@ -72,23 +77,28 @@ class MainActivity : AppCompatActivity(), PermissionListener {
      */
     //@SuppressLint("MissingPermission")
     private fun getLastLocation() {
-        fusedLocationClient.lastLocation
 
-            .addOnCompleteListener { taskLocation ->
+        if (!checkPermissions()) {
+            requestPermissions()
+        }
+        else {
 
-                if (taskLocation.isSuccessful && taskLocation.result != null) {
+            fusedLocationClient.lastLocation.addOnCompleteListener { taskLocation ->
 
-                    val location = taskLocation.result
+                    if (taskLocation.isSuccessful && taskLocation.result != null) {
 
-                    txt_latitude.text = location?.latitude.toString()
-                    txt_longitude.text = location?.longitude.toString()
+                        val location = taskLocation.result
 
+                        txt_latitude.text = location?.latitude.toString()
+                        txt_longitude.text = location?.longitude.toString()
+
+                    }
+                    else {
+                        //Log.w(TAG, "getLastLocation:exception", taskLocation.exception)
+                        showSnackbar(R.string.no_location_detected)
+                    }
                 }
-                else {
-                    //Log.w(TAG, "getLastLocation:exception", taskLocation.exception)
-                    showSnackbar(R.string.no_location_detected)
-                }
-            }
+        }
     }
 
 
@@ -116,14 +126,15 @@ class MainActivity : AppCompatActivity(), PermissionListener {
     override fun onStart() {
         super.onStart()
 
-        if (!checkPermissions()) {
-            requestPermissions()
-        }
-        else {
-            getLastLocation()
-        }
+        getLastLocation();
 
     }
+
+
+    override fun onClick(v: View?) {
+        getLastLocation()
+    }
+
 
 
     override fun onPermissionGranted(response: PermissionGrantedResponse?) {
