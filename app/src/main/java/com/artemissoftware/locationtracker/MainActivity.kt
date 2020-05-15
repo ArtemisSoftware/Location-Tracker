@@ -1,10 +1,28 @@
 package com.artemissoftware.locationtracker
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.TextView
+import androidx.core.app.ActivityCompat
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionDeniedResponse
+import com.karumi.dexter.listener.PermissionGrantedResponse
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.single.PermissionListener
+import android.R.string.cancel
+import android.content.DialogInterface
+import androidx.appcompat.app.AlertDialog
+import android.net.Uri.fromParts
+import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 
-class MainActivity : AppCompatActivity() {
+
+class MainActivity : AppCompatActivity(), PermissionListener {
 
 
     /**
@@ -17,36 +35,99 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txt_longitude: TextView
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         txt_latitude = findViewById(R.id.txt_latitude)
         txt_longitude = findViewById(R.id.txt_longitude)
 
+
+        Dexter.withContext(this)
+            .withPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+            .withListener(this)
+            .check()
+
         //fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     }
+
+    /**
+     * Return the current state of the permissions needed.
+     */
+    private fun checkPermissions() = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+
+    private fun requestPermissions() {
+        Dexter.withContext(this)
+            .withPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+            .withListener(this)
+            .check()
+    }
+
+
+
+
+
 
     override fun onStart() {
         super.onStart()
 
-        /*
         if (!checkPermissions()) {
             requestPermissions()
-        } else {
+        }
+        /* else {
             getLastLocation()
         }
         */
     }
 
 
+    override fun onPermissionGranted(response: PermissionGrantedResponse?) {
+        //getLastLocation()
+    }
+
+    override fun onPermissionRationaleShouldBeShown(permission: PermissionRequest?, token: PermissionToken?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onPermissionDenied(response: PermissionDeniedResponse?) {
+
+        // check for permanent denial of permission
+        if (response?.isPermanentlyDenied()!!) {
+            showSettingsDialog();
+        }
+    }
 
 
 
+    /**
+     * Showing Alert Dialog with Settings option
+     * Navigates user to app settings
+     */
+    private fun showSettingsDialog() {
+
+        val builder = AlertDialog.Builder(this@MainActivity)
+
+        builder.setTitle("Need Permissions")
+        builder.setMessage("This app needs permission to use this feature. You can grant them in app settings.")
+        builder.setPositiveButton("GOTO SETTINGS",
+            DialogInterface.OnClickListener { dialog, which ->
+                dialog.cancel()
+                openSettings()
+            })
+        builder.setNegativeButton("Cancel",
+            DialogInterface.OnClickListener { dialog, which -> dialog.cancel() })
+        builder.show()
+
+    }
 
 
-
-
+    // navigating user to app settings
+    private fun openSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", packageName, null)
+        intent.setData(uri)
+        startActivityForResult(intent, 101)
+    }
 
 
 
@@ -101,32 +182,13 @@ class MainActivity : AppCompatActivity() {
     /**
      * Return the current state of the permissions needed.
      *//*
-    private fun checkPermissions() =
-        ActivityCompat.checkSelfPermission(this, ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED
 
     private fun startLocationPermissionRequest() {
         ActivityCompat.requestPermissions(this, arrayOf(ACCESS_COARSE_LOCATION),
             REQUEST_PERMISSIONS_REQUEST_CODE)
     }
 
-    private fun requestPermissions() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, ACCESS_COARSE_LOCATION)) {
-            // Provide an additional rationale to the user. This would happen if the user denied the
-            // request previously, but didn't check the "Don't ask again" checkbox.
-            Log.i(TAG, "Displaying permission rationale to provide additional context.")
-            showSnackbar(R.string.permission_rationale, android.R.string.ok, View.OnClickListener {
-                // Request permission
-                startLocationPermissionRequest()
-            })
 
-        } else {
-            // Request permission. It's possible this can be auto answered if device policy
-            // sets the permission in a given state or the user denied the permission
-            // previously and checked "Never ask again".
-            Log.i(TAG, "Requesting permission")
-            startLocationPermissionRequest()
-        }
-    }
 */
     /**
      * Callback received when a permissions request has been completed.
