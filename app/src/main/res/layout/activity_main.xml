@@ -51,7 +51,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
-                android:text="unknown"
+                android:text="@string/location_unknown"
                 app:layout_constraintStart_toEndOf="@+id/textView"
                 app:layout_constraintTop_toTopOf="@+id/textView" />
 
@@ -71,7 +71,7 @@
                 android:id="@+id/txt_longitude"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="unknown"
+                android:text="@string/location_unknown"
                 app:layout_constraintStart_toStartOf="@+id/txt_latitude"
                 app:layout_constraintTop_toTopOf="@+id/textView3" />
         </androidx.constraintlayout.widget.ConstraintLayout>
