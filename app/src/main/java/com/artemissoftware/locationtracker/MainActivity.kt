@@ -81,6 +81,10 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         setContentView(R.layout.activity_main)
 
         fab.setOnClickListener(this);
+        fab_last_location.setOnClickListener(this);
+        fab_start_tracking.setOnClickListener(this);
+        fab_clear.setOnClickListener(this);
+        fab_stop_tracking.setOnClickListener(this);
 
         pinAdapter = PinAdapter();
 
@@ -90,7 +94,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         }
 
         init()
-        startLocationUpdates()
+        //startLocationUpdates()
     }
 
 
@@ -297,7 +301,16 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
     override fun onClick(v: View?) {
-        getLastLocation()
+
+        when(v?.id){
+
+            R.id.fab_last_location -> getLastLocation()
+            R.id.fab_start_tracking -> startLocationUpdates()
+            R.id.fab_clear -> {}
+            R.id.fab_stop_tracking -> {}
+        }
+
+        fab_menu.close(false);
     }
 
 
