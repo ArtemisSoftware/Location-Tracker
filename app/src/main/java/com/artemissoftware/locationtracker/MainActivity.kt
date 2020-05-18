@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     private lateinit var mLocationRequest: LocationRequest;
     private lateinit var mLocationSettingsRequest: LocationSettingsRequest;
     private lateinit var mLocationCallback: LocationCallback ;
-    private lateinit var mCurrentLocation: Location ;
+    private var mCurrentLocation: Location? = null;
 
 
     // location updates interval - 10sec
@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         }
 
         init()
-        //startLocationUpdates()
+
     }
 
 
@@ -135,23 +135,38 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
     /**
-     * Update the UI displaying the location data
-     * and toggling the buttons
+     * Update the UI displaying the location data and toggling the buttons
      */
     private fun updateLocationUI() {
 
+        if(mCurrentLocation != null) {
+            txt_latitude.text = mCurrentLocation?.latitude.toString()
+            txt_longitude.text = mCurrentLocation?.longitude.toString()
 
-        txt_latitude.text = mCurrentLocation?.latitude.toString()
-        txt_longitude.text = mCurrentLocation?.longitude.toString()
+            val pin = Pin(
+                mCurrentLocation?.latitude.toString(),
+                mCurrentLocation?.longitude.toString(),
+                Date()
+            )
+            pinAdapter.addPin(pin);
+        }
+        //--toggleButtons();
+    }
 
 
-        val pin = Pin(mCurrentLocation?.latitude.toString(), mCurrentLocation?.longitude.toString(), Date())
-        pinAdapter.addPin(pin);
+    /**
+     * Clear the UI displaying the location data
+     */
+    private fun clearUI() {
 
+        txt_latitude.text = ""
+        txt_longitude.text = ""
 
+        pinAdapter.clear()
 
         //--toggleButtons();
     }
+
 
 
     /**
@@ -307,21 +322,13 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
 
-    override fun onStart() {
-        super.onStart()
-
-        getLastLocation();
-
-    }
-
-
     override fun onClick(v: View?) {
 
         when(v?.id){
 
             R.id.fab_last_location -> getLastLocation()
             R.id.fab_start_tracking -> startLocationUpdates()
-            R.id.fab_clear -> {}
+            R.id.fab_clear -> clearUI()
             R.id.fab_stop_tracking -> stopLocationUpdates()
         }
 
