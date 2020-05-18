@@ -33,6 +33,7 @@ import com.google.android.gms.location.*
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.tasks.Task
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
@@ -41,7 +42,7 @@ import java.util.*
 
 
 class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener,
-    OnSuccessListener<LocationSettingsResponse>, OnFailureListener {
+    OnSuccessListener<LocationSettingsResponse>, OnFailureListener, OnCompleteListener<Void> {
 
 
 
@@ -59,7 +60,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
     // location updates interval - 10sec
-    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 10000
+    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 3 * 1000
 
     // fastest updates interval - 5 sec
     // location updates will be received if another app is requesting the locations
@@ -252,6 +253,12 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         updateLocationUI();
     }
 
+
+    override fun onComplete(task: Task<Void>) {
+        showSnackbar(R.string.stop_location_updates)
+    }
+
+
     /**
      * Starting location updates
      * Check whether location settings are satisfied and then
@@ -266,6 +273,14 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     }
 
 
+    /**
+     * Removing location updates
+     */
+    private fun stopLocationUpdates() {
+
+        fusedLocationClient.removeLocationUpdates(mLocationCallback)
+            .addOnCompleteListener(this)
+    }
 
 
 
@@ -307,7 +322,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
             R.id.fab_last_location -> getLastLocation()
             R.id.fab_start_tracking -> startLocationUpdates()
             R.id.fab_clear -> {}
-            R.id.fab_stop_tracking -> {}
+            R.id.fab_stop_tracking -> stopLocationUpdates()
         }
 
         fab_menu.close(false);
