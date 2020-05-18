@@ -104,7 +104,6 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     private fun init(){
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-
         mSettingsClient = LocationServices.getSettingsClient(this);
 
 
