@@ -7,12 +7,13 @@ import com.artemissoftware.locationtracker.models.Pin
 
 class PinAdapter() : RecyclerView.Adapter<PinViewHolder>() {
 
-    private val list : MutableList<Pin>
-
+    private var list : MutableList<Pin>
+    private var lastPin : Pin?
 
     init {
 
         list = mutableListOf<Pin>();
+        lastPin = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PinViewHolder {
@@ -31,12 +32,26 @@ class PinAdapter() : RecyclerView.Adapter<PinViewHolder>() {
 
     fun addPin(pin : Pin){
 
-        if(list.size + 1 > 10){
-           list.dropLast(1)
+        if(lastPin == null){
+            lastPin = pin
         }
+        else{
 
-        list.add(0, pin);
+            if(list.size + 1 > 5){
+                list = list.dropLast(1) as MutableList<Pin>
+            }
+
+            list.add(0, lastPin!!);
+            lastPin = pin
+            notifyDataSetChanged();
+        }
+    }
+
+    fun clear(){
+
+        list.clear();
         notifyDataSetChanged();
     }
+
 
 }

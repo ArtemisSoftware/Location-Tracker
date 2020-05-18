@@ -18,21 +18,33 @@ import androidx.appcompat.app.AlertDialog
 import android.net.Uri.fromParts
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.content.Intent
+import android.content.IntentSender
+import android.location.Location
 import android.net.Uri
+import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artemissoftware.locationtracker.adapters.PinAdapter
 import com.artemissoftware.locationtracker.models.Pin
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.artemissoftware.locationtracker.util.Messages
+import com.artemissoftware.locationtracker.util.Permissions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.tasks.Task
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.Exception
 import java.util.*
 
 
-class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener {
+class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListener,
+    OnSuccessListener<LocationSettingsResponse>, OnFailureListener, OnCompleteListener<Void> {
 
 
 
@@ -41,8 +53,28 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
      */
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
-    private lateinit var txt_latitude: TextView
-    private lateinit var txt_longitude: TextView
+
+    private lateinit var mSettingsClient: SettingsClient;
+    private lateinit var mLocationRequest: LocationRequest;
+    private lateinit var mLocationSettingsRequest: LocationSettingsRequest;
+    private lateinit var mLocationCallback: LocationCallback ;
+    private var mCurrentLocation: Location? = null;
+
+
+    // location updates interval - 10sec
+    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 3 * 1000
+
+    // fastest updates interval - 5 sec
+    // location updates will be received if another app is requesting the locations
+    // than your app can handle
+    private val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS: Long = 5000
+
+    private val REQUEST_CHECK_SETTINGS = 100
+
+
+    // boolean flag to toggle the ui
+    private var  mRequestingLocationUpdates: Boolean = false
+
 
     private lateinit var pinAdapter: PinAdapter;
 
@@ -51,10 +83,11 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        txt_latitude = findViewById(R.id.txt_latitude)
-        txt_longitude = findViewById(R.id.txt_longitude)
-
-        (findViewById(R.id.fab) as FloatingActionButton).setOnClickListener(this);
+        fab.setOnClickListener(this);
+        fab_last_location.setOnClickListener(this);
+        fab_start_tracking.setOnClickListener(this);
+        fab_clear.setOnClickListener(this);
+        fab_stop_tracking.setOnClickListener(this);
 
         pinAdapter = PinAdapter();
 
@@ -63,22 +96,80 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
             adapter = pinAdapter
         }
 
+        init()
+
+    }
+
+
+    private fun init(){
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        mSettingsClient = LocationServices.getSettingsClient(this);
+
+
+        mLocationCallback = object : LocationCallback() {
+
+            override fun onLocationResult(locationResult: LocationResult?) {
+                super.onLocationResult(locationResult)
+
+                // location is received
+                mCurrentLocation = locationResult?.getLastLocation()!!;
+
+                updateLocationUI();
+            }
+        }
+
+
+        mRequestingLocationUpdates = false;
+
+        mLocationRequest = LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        val builder = LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        mLocationSettingsRequest = builder.build();
+
     }
+
+
 
     /**
-     * Return the current state of the permissions needed.
+     * Update the UI displaying the location data and toggling the buttons
      */
-    private fun checkPermissions() = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    private fun updateLocationUI() {
 
+        if(mCurrentLocation != null) {
+            txt_latitude.text = mCurrentLocation?.latitude.toString()
+            txt_longitude.text = mCurrentLocation?.longitude.toString()
 
-    private fun requestPermissions() {
-        Dexter.withContext(this)
-            .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-            .withListener(this)
-            .check()
+            val pin = Pin(
+                mCurrentLocation?.latitude.toString(),
+                mCurrentLocation?.longitude.toString(),
+                Date()
+            )
+            pinAdapter.addPin(pin);
+        }
+        //--toggleButtons();
     }
+
+
+    /**
+     * Clear the UI displaying the location data
+     */
+    private fun clearUI() {
+
+        txt_latitude.text = ""
+        txt_longitude.text = ""
+
+        pinAdapter.clear()
+
+        //--toggleButtons();
+    }
+
+
+
 
 
     /**
@@ -92,8 +183,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     //@SuppressLint("MissingPermission")
     private fun getLastLocation() {
 
-        if (!checkPermissions()) {
-            requestPermissions()
+        if (!Permissions.checkPermissions(applicationContext)) {
+            Permissions.requestPermissions(applicationContext, this)
         }
         else {
 
@@ -101,56 +192,110 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
                     if (taskLocation.isSuccessful && taskLocation.result != null) {
 
-                        val location = taskLocation.result
-
-                        txt_latitude.text = location?.latitude.toString()
-                        txt_longitude.text = location?.longitude.toString()
-
-
-                        val pin = Pin(location?.latitude.toString(), location?.longitude.toString(), Date())
-                        pinAdapter.addPin(pin);
-
+                        mCurrentLocation = taskLocation.result!!
+                        updateLocationUI()
                     }
                     else {
-                        //Log.w(TAG, "getLastLocation:exception", taskLocation.exception)
-                        showSnackbar(R.string.no_location_detected)
+                        Messages.showSnackbar(this, R.string.no_location_detected)
                     }
                 }
         }
     }
 
 
+
+
     /**
-     * Shows a [Snackbar].
-     *
-     * @param snackStrId The id for the string resource for the Snackbar text.
-     * @param actionStrId The text of the action item.
-     * @param listener The listener associated with the Snackbar action.
+     * Starting location updates
+     * Check whether location settings are satisfied and then
+     * location updates will be requested
      */
-    private fun showSnackbar(snackStrId: Int, actionStrId: Int = 0, listener: View.OnClickListener? = null) {
+    private fun startLocationUpdates() {
 
-        val snackbar = Snackbar.make(findViewById(android.R.id.content), getString(snackStrId), Snackbar.LENGTH_INDEFINITE)
-
-        if (actionStrId != 0 && listener != null) {
-            snackbar.setAction(getString(actionStrId), listener)
+        if (!Permissions.checkPermissions(applicationContext)) {
+            Permissions.requestPermissions(applicationContext, this)
+        }
+        else {
+            mSettingsClient.checkLocationSettings(mLocationSettingsRequest)
+                .addOnSuccessListener(this)
+                .addOnFailureListener(this)
         }
 
-        snackbar.show()
+    }
+
+
+    /**
+     * Removing location updates
+     */
+    private fun stopLocationUpdates() {
+
+        fusedLocationClient.removeLocationUpdates(mLocationCallback)
+            .addOnCompleteListener(this)
     }
 
 
 
 
-    override fun onStart() {
-        super.onStart()
 
-        getLastLocation();
 
+
+    override fun onSuccess(LocationSettingsResponse: LocationSettingsResponse?) {
+
+        Messages.showSnackbar(this, R.string.start_location_updates)
+
+        fusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+
+        updateLocationUI();
     }
+
+
+    override fun onFailure(e: Exception) {
+
+        val statusCode = (e as ApiException).getStatusCode()
+
+        when (statusCode) {
+            LocationSettingsStatusCodes.RESOLUTION_REQUIRED -> {
+
+                try {
+                    val rae =  e as ResolvableApiException;
+                    rae.startResolutionForResult(this, REQUEST_CHECK_SETTINGS);
+                }
+                catch (sie : IntentSender.SendIntentException) {
+                    //Log.i(TAG, "PendingIntent unable to execute request.");
+                }
+
+            }
+
+            LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE -> {
+
+                val errorMessage = "Location settings are inadequate, and cannot be fixed here. Fix in Settings.";
+                //Log.e(TAG, errorMessage);
+
+                //Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+            }
+        }
+
+        updateLocationUI();
+    }
+
+
+    override fun onComplete(task: Task<Void>) {
+        Messages.showSnackbar(this, R.string.stop_location_updates)
+    }
+
 
 
     override fun onClick(v: View?) {
-        getLastLocation()
+
+        when(v?.id){
+
+            R.id.fab_last_location -> getLastLocation()
+            R.id.fab_start_tracking -> startLocationUpdates()
+            R.id.fab_clear -> clearUI()
+            R.id.fab_stop_tracking -> stopLocationUpdates()
+        }
+
+        fab_menu.close(false);
     }
 
 
@@ -167,40 +312,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
         // check for permanent denial of permission
         if (response?.isPermanentlyDenied()!!) {
-            showSettingsDialog();
+            Messages.showSettingsDialog(this);
         }
-    }
-
-
-
-    /**
-     * Showing Alert Dialog with Settings option
-     * Navigates user to app settings
-     */
-    private fun showSettingsDialog() {
-
-        val builder = AlertDialog.Builder(this@MainActivity)
-
-        builder.setTitle("Need Permissions")
-        builder.setMessage(getString(R.string.permission_rationale))
-        builder.setPositiveButton("GOTO SETTINGS",
-            DialogInterface.OnClickListener { dialog, which ->
-                dialog.cancel()
-                openSettings()
-            })
-        builder.setNegativeButton("Cancel",
-            DialogInterface.OnClickListener { dialog, which -> dialog.cancel() })
-        builder.show()
-
-    }
-
-
-    // navigating user to app settings
-    private fun openSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        val uri = Uri.fromParts("package", packageName, null)
-        intent.setData(uri)
-        startActivityForResult(intent, 101)
     }
 
 
