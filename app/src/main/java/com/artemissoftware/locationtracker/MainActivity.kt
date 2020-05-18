@@ -27,6 +27,7 @@ import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artemissoftware.locationtracker.adapters.PinAdapter
 import com.artemissoftware.locationtracker.models.Pin
+import com.artemissoftware.locationtracker.util.Permissions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -169,29 +170,6 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
 
-    /**
-     * Return the current state of the permissions needed.
-     */
-    private fun checkPermissions() = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
-
-    private fun requestPermissions() {
-        Dexter.withContext(this)
-            .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-            .withListener(this)
-            .check()
-    }
-
-
-
-
-
-
-
-
-
-
-
 
 
     /**
@@ -205,8 +183,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     //@SuppressLint("MissingPermission")
     private fun getLastLocation() {
 
-        if (!checkPermissions()) {
-            requestPermissions()
+        if (!Permissions.checkPermissions(applicationContext)) {
+            Permissions.requestPermissions(applicationContext, this)
         }
         else {
 
