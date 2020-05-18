@@ -27,6 +27,7 @@ import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artemissoftware.locationtracker.adapters.PinAdapter
 import com.artemissoftware.locationtracker.models.Pin
+import com.artemissoftware.locationtracker.util.Messages
 import com.artemissoftware.locationtracker.util.Permissions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
@@ -193,13 +194,10 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
                     if (taskLocation.isSuccessful && taskLocation.result != null) {
 
                         mCurrentLocation = taskLocation.result!!
-
                         updateLocationUI()
-
                     }
                     else {
-                        //Log.w(TAG, "getLastLocation:exception", taskLocation.exception)
-                        showSnackbar(R.string.no_location_detected)
+                        Messages.showSnackbar(this, R.string.no_location_detected)
                     }
                 }
         }
@@ -207,9 +205,44 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
 
+
+    /**
+     * Starting location updates
+     * Check whether location settings are satisfied and then
+     * location updates will be requested
+     */
+    private fun startLocationUpdates() {
+
+        if (!Permissions.checkPermissions(applicationContext)) {
+            Permissions.requestPermissions(applicationContext, this)
+        }
+        else {
+            mSettingsClient.checkLocationSettings(mLocationSettingsRequest)
+                .addOnSuccessListener(this)
+                .addOnFailureListener(this)
+        }
+
+    }
+
+
+    /**
+     * Removing location updates
+     */
+    private fun stopLocationUpdates() {
+
+        fusedLocationClient.removeLocationUpdates(mLocationCallback)
+            .addOnCompleteListener(this)
+    }
+
+
+
+
+
+
+
     override fun onSuccess(LocationSettingsResponse: LocationSettingsResponse?) {
 
-        showSnackbar(R.string.start_location_updates)
+        Messages.showSnackbar(this, R.string.start_location_updates)
 
         fusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
 
@@ -248,55 +281,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
 
     override fun onComplete(task: Task<Void>) {
-        showSnackbar(R.string.stop_location_updates)
+        Messages.showSnackbar(this, R.string.stop_location_updates)
     }
-
-
-    /**
-     * Starting location updates
-     * Check whether location settings are satisfied and then
-     * location updates will be requested
-     */
-    private fun startLocationUpdates() {
-
-        mSettingsClient.checkLocationSettings(mLocationSettingsRequest)
-            .addOnSuccessListener(this)
-            .addOnFailureListener(this)
-
-    }
-
-
-    /**
-     * Removing location updates
-     */
-    private fun stopLocationUpdates() {
-
-        fusedLocationClient.removeLocationUpdates(mLocationCallback)
-            .addOnCompleteListener(this)
-    }
-
-
-
-
-
-    /**
-     * Shows a [Snackbar].
-     *
-     * @param snackStrId The id for the string resource for the Snackbar text.
-     * @param actionStrId The text of the action item.
-     * @param listener The listener associated with the Snackbar action.
-     */
-    private fun showSnackbar(snackStrId: Int, actionStrId: Int = 0, listener: View.OnClickListener? = null) {
-
-        val snackbar = Snackbar.make(findViewById(android.R.id.content), getString(snackStrId), Snackbar.LENGTH_INDEFINITE)
-
-        if (actionStrId != 0 && listener != null) {
-            snackbar.setAction(getString(actionStrId), listener)
-        }
-
-        snackbar.show()
-    }
-
 
 
 
@@ -327,40 +313,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
         // check for permanent denial of permission
         if (response?.isPermanentlyDenied()!!) {
-            showSettingsDialog();
+            Messages.showSettingsDialog(this);
         }
-    }
-
-
-
-    /**
-     * Showing Alert Dialog with Settings option
-     * Navigates user to app settings
-     */
-    private fun showSettingsDialog() {
-
-        val builder = AlertDialog.Builder(this@MainActivity)
-
-        builder.setTitle("Need Permissions")
-        builder.setMessage(getString(R.string.permission_rationale))
-        builder.setPositiveButton("GOTO SETTINGS",
-            DialogInterface.OnClickListener { dialog, which ->
-                dialog.cancel()
-                openSettings()
-            })
-        builder.setNegativeButton("Cancel",
-            DialogInterface.OnClickListener { dialog, which -> dialog.cancel() })
-        builder.show()
-
-    }
-
-
-    // navigating user to app settings
-    private fun openSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        val uri = Uri.fromParts("package", packageName, null)
-        intent.setData(uri)
-        startActivityForResult(intent, 101)
     }
 
 
