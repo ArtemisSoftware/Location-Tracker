@@ -135,7 +135,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
                 mCurrentLocation?.latitude.toString(),
                 mCurrentLocation?.longitude.toString(),
                 Date(),
-                Battery.getBatteryPercentage(applicationContext)
+                Battery.getBatteryPercentage(applicationContext),
+                getAddress()
             )
             pinAdapter.addPin(pin);
         }
