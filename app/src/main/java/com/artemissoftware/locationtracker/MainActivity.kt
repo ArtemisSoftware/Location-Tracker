@@ -8,6 +8,7 @@ import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import android.content.IntentSender
+import android.location.Geocoder
 import android.location.Location
 import android.os.Looper
 import android.view.View
@@ -219,6 +220,14 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     }
 
 
+
+    private fun getAddress() : String{
+
+        val geocoder = Geocoder(this, Locale.getDefault());
+
+        val addresses = geocoder.getFromLocation(mCurrentLocation!!.latitude, mCurrentLocation!!.longitude, 1);
+        return addresses.get(0).getAddressLine(0);
+    }
 
 
 
