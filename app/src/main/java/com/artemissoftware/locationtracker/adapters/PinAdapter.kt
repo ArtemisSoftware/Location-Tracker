@@ -49,6 +49,7 @@ class PinAdapter() : RecyclerView.Adapter<PinViewHolder>() {
 
     fun clear(){
 
+        lastPin = null
         list.clear();
         notifyDataSetChanged();
     }
