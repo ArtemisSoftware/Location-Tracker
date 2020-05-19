@@ -24,4 +24,5 @@
 
     <string name="location_settings_inadequate">Location settings are inadequate, and cannot be fixed here. Fix in Settings.</string>
     <string name="pending_intent_unable">PendingIntent unable to execute request.</string>
+    <string name="battery_">Battery:</string>
 </resources>
