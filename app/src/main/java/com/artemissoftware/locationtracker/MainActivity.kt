@@ -8,6 +8,7 @@ import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import android.content.IntentSender
+import android.location.Geocoder
 import android.location.Location
 import android.os.Looper
 import android.view.View
@@ -129,12 +130,14 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         if(mCurrentLocation != null) {
             txt_latitude.text = mCurrentLocation?.latitude.toString()
             txt_longitude.text = mCurrentLocation?.longitude.toString()
+            txt_address.text = getAddress()
 
             val pin = Pin(
                 mCurrentLocation?.latitude.toString(),
                 mCurrentLocation?.longitude.toString(),
                 Date(),
-                Battery.getBatteryPercentage(applicationContext)
+                Battery.getBatteryPercentage(applicationContext),
+                getAddress()
             )
             pinAdapter.addPin(pin);
         }
@@ -219,6 +222,14 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
     }
 
 
+
+    private fun getAddress() : String{
+
+        val geocoder = Geocoder(this, Locale.getDefault());
+
+        val addresses = geocoder.getFromLocation(mCurrentLocation!!.latitude, mCurrentLocation!!.longitude, 1);
+        return addresses.get(0).getAddressLine(0);
+    }
 
 
 
