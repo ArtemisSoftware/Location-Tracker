@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
         if(mCurrentLocation != null) {
             txt_latitude.text = mCurrentLocation?.latitude.toString()
             txt_longitude.text = mCurrentLocation?.longitude.toString()
+            txt_address.text = getAddress()
 
             val pin = Pin(
                 mCurrentLocation?.latitude.toString(),
