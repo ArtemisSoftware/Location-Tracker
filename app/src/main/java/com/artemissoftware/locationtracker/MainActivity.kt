@@ -1,32 +1,20 @@
 package com.artemissoftware.locationtracker
 
-import android.Manifest
-import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.TextView
-import androidx.core.app.ActivityCompat
-import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
-import android.R.string.cancel
-import android.content.DialogInterface
-import androidx.appcompat.app.AlertDialog
-import android.net.Uri.fromParts
-import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-import android.content.Intent
 import android.content.IntentSender
 import android.location.Location
-import android.net.Uri
 import android.os.Looper
-import android.provider.Settings
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artemissoftware.locationtracker.adapters.PinAdapter
 import com.artemissoftware.locationtracker.models.Pin
+import com.artemissoftware.locationtracker.util.Battery
 import com.artemissoftware.locationtracker.util.Messages
 import com.artemissoftware.locationtracker.util.Permissions
 import com.google.android.gms.common.api.ApiException
@@ -36,8 +24,6 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import java.lang.Exception
 import java.util.*
@@ -147,7 +133,8 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
             val pin = Pin(
                 mCurrentLocation?.latitude.toString(),
                 mCurrentLocation?.longitude.toString(),
-                Date()
+                Date(),
+                Battery.getBatteryPercentage(applicationContext)
             )
             pinAdapter.addPin(pin);
         }
@@ -165,7 +152,6 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
 
         pinAdapter.clear()
 
-        //--toggleButtons();
     }
 
 
@@ -220,7 +206,6 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
                 .addOnSuccessListener(this)
                 .addOnFailureListener(this)
         }
-
     }
 
 
@@ -261,17 +246,12 @@ class MainActivity : AppCompatActivity(), PermissionListener, View.OnClickListen
                     rae.startResolutionForResult(this, REQUEST_CHECK_SETTINGS);
                 }
                 catch (sie : IntentSender.SendIntentException) {
-                    //Log.i(TAG, "PendingIntent unable to execute request.");
+                    Messages.showSnackbar(this, R.string.pending_intent_unable)
                 }
-
             }
 
             LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE -> {
-
-                val errorMessage = "Location settings are inadequate, and cannot be fixed here. Fix in Settings.";
-                //Log.e(TAG, errorMessage);
-
-                //Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                Messages.showSnackbar(this, R.string.location_settings_inadequate)
             }
         }
 
